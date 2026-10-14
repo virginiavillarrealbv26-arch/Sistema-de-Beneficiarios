@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sistema de Gestion de Beneficiarios y Ayudas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">SG</span>
+        <div>
+          <strong>Gestion de Ayudas</strong>
+          <small>Beneficiarios y asistencia</small>
+        </div>
+      </div>
+      <nav class="nav" aria-label="Menu principal">
+        <button class="nav-item active" data-view="dashboard">Dashboard</button>
+        <button class="nav-item" data-view="beneficiarios">Beneficiarios</button>
+        <button class="nav-item" data-view="ayudas">Ayudas</button>
+        <button class="nav-item" data-view="catalogos">Categorias</button>
+        <button class="nav-item" data-view="reportes">Reportes</button>
+        <button class="nav-item" data-view="usuarios">Usuarios</button>
+        <button class="nav-item" data-view="auditoria">Auditoria</button>
+      </nav>
+      <div class="session-box">
+        <label for="currentUser">Usuario activo</label>
+        <select id="currentUser"></select>
+        <p id="roleHint"></p>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sistema basado en el documento funcional</p>
+          <h1 id="viewTitle">Dashboard</h1>
+        </div>
+        <div class="top-actions">
+          <button class="ghost" id="seedDataBtn" title="Restaurar datos de ejemplo">Restaurar demo</button>
+          <button class="primary" id="openBeneficiaryModal">Nuevo beneficiario</button>
+        </div>
+      </header>
+
+      <section id="dashboard" class="view active">
+        <div class="toolbar dashboard-toolbar">
+          <label>Desde<input id="dashboardFrom" type="date"></label>
+          <label>Hasta<input id="dashboardTo" type="date"></label>
+          <button class="ghost" id="clearDashboardDates">Limpiar fechas</button>
+        </div>
+        <div class="kpi-grid">
+          <article class="kpi"><span>Beneficiarios activos</span><strong id="kpiBeneficiarios">0</strong></article>
+          <article class="kpi"><span>Ayudas registradas</span><strong id="kpiAyudas">0</strong></article>
+          <article class="kpi"><span>Cantidad entregada</span><strong id="kpiCantidad">0</strong></article>
+          <article class="kpi"><span>Barrios atendidos</span><strong id="kpiBarrios">0</strong></article>
+        </div>
+        <div class="dashboard-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Ayudas por tipo</h2>
+              <select id="dashboardTypeFilter"></select>
+            </div>
+            <div id="chartTipos" class="bar-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Ayudas por barrio</h2>
+              <select id="dashboardBarrioFilter"></select>
+            </div>
+            <div class="pie-layout">
+              <div id="pieBarrios" class="pie-chart" aria-label="Grafico de torta por barrio"></div>
+              <div id="chartBarrios" class="chart-legend"></div>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Motivos principales</h2>
+            </div>
+            <div id="chartMotivos" class="bar-list"></div>
+          </section>
+          <section class="panel wide">
+            <div class="panel-head">
+              <h2>Actividad reciente</h2>
+              <button class="ghost small" data-view-target="auditoria">Ver auditoria</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Fecha</th><th>Usuario</th><th>Accion</th><th>Modulo</th></tr></thead>
+                <tbody id="recentAuditRows"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel wide">
+            <div class="panel-head">
+              <h2>Mapa de Bella Vista</h2>
+              <span class="badge ok">Barrio asignado: <strong id="assignedBarrioLabel">-</strong></span>
+            </div>
+            <div class="district-map-wrap">
+              <div id="bellaVistaMap" class="district-map" aria-label="Mapa de barrios de Bella Vista"></div>
+              <ul id="districtUserList" class="district-user-list"></ul>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="beneficiarios" class="view">
+        <div class="toolbar">
+          <input id="beneficiarySearch" type="search" placeholder="Buscar por nombre, apellido, DNI, barrio o telefono">
+          <select id="beneficiaryStatusFilter">
+            <option value="active">Activos</option>
+            <option value="all">Todos</option>
+            <option value="inactive">Inactivos</option>
+          </select>
+          <button class="primary" id="newBeneficiaryBtn">Nuevo beneficiario</button>
+          <button class="ghost" id="exportBeneficiariesBtn">Exportar CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>DNI</th><th>Apellido y nombre</th><th>Barrio</th><th>Telefono</th><th>Integrantes</th><th>Estado</th><th>Acciones</th></tr>
+            </thead>
+            <tbody id="beneficiaryRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="ayudas" class="view">
+        <div class="toolbar">
+          <input id="aidSearch" type="search" placeholder="Buscar ayuda por beneficiario, tipo, motivo o barrio">
+          <select id="aidTypeFilter"></select>
+          <select id="aidReasonFilter"></select>
+          <button class="primary" id="newAidBtn">Registrar ayuda</button>
+          <button class="ghost" id="exportAidsBtn">Exportar CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Fecha</th><th>Beneficiario</th><th>Tipo</th><th>Motivo</th><th>Cantidad</th><th>Responsable</th><th>Acciones</th></tr>
+            </thead>
+            <tbody id="aidRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="catalogos" class="view">
+        <div class="catalog-grid">
+          <section class="panel">
+            <div class="panel-head"><h2>Barrios</h2><button class="primary small" data-catalog="barrios">Agregar</button></div>
+            <div id="barriosList" class="catalog-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><h2>Tipos de ayuda</h2><button class="primary small" data-catalog="tipos">Agregar</button></div>
+            <div id="tiposList" class="catalog-list"></div>
+          </section>
+          <section class="panel">
+            <div class="panel-head"><h2>Motivos</h2><button class="primary small" data-catalog="motivos">Agregar</button></div>
+            <div id="motivosList" class="catalog-list"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="reportes" class="view">
+        <div class="toolbar report-toolbar">
+          <label>Reporte<select id="reportKind">
+              <option value="beneficiarios">Beneficiarios generales</option>
+              <option value="ayudas">Ayudas entregadas</option>
+              <option value="barrio">Ayudas por barrio</option>
+              <option value="tipo">Ayudas por tipo</option>
+              <option value="motivo">Ayudas por motivo</option>
+            </select></label>
+          <label>Desde<input id="reportFrom" type="date"></label>
+          <label>Hasta<input id="reportTo" type="date"></label>
+          <button class="ghost" id="clearReportDates">Limpiar fechas</button>
+          <button class="primary" id="runReportBtn">Generar</button>
+          <button class="ghost" id="exportReportBtn">Exportar reporte</button>
+        </div>
+        <section class="panel">
+          <div class="panel-head"><h2 id="reportTitle">Reporte</h2><span id="reportCount" class="badge">0 registros</span></div>
+          <div class="table-wrap"><table id="reportTable"></table></div>
+        </section>
+      </section>
+
+      <section id="usuarios" class="view">
+        <div class="toolbar">
+          <button class="primary" id="newUserBtn">Nuevo usuario</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Telefono</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="auditoria" class="view">
+        <div class="toolbar">
+          <input id="auditSearch" type="search" placeholder="Filtrar por usuario, accion, modulo o detalle">
+          <select id="auditModuleFilter"></select>
+          <button class="ghost" id="exportAuditBtn">Exportar CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha y hora</th><th>Usuario</th><th>Modulo</th><th>Accion</th><th>Detalle</th></tr></thead>
+            <tbody id="auditRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="beneficiaryDialog">
+    <form method="dialog" id="beneficiaryForm" class="modal-form">
+      <header><h2 id="beneficiaryModalTitle">Nuevo beneficiario</h2><button type="button" class="icon-btn" data-close>X</button></header>
+      <input type="hidden" id="beneficiaryId">
+      <div class="form-grid">
+        <label>Nombre<input id="beneficiaryName" required></label>
+        <label>Apellido<input id="beneficiaryLastName" required></label>
+        <label>DNI<input id="beneficiaryDni" required inputmode="numeric"></label>
+        <label>Telefono<input id="beneficiaryPhone" required></label>
+        <label>Fecha de nacimiento<input id="beneficiaryBirth" type="date"></label>
+        <label>Integrantes grupo familiar<input id="beneficiaryFamily" type="number" min="1" required></label>
+        <label>Barrio<select id="beneficiaryBarrio" required></select></label>
+        <label>Estado<select id="beneficiaryActive"><option value="true">Activo</option><option value="false">Inactivo</option></select></label>
+      </div>
+      <label>Observaciones<textarea id="beneficiaryNotes" rows="3"></textarea></label>
+      <p class="form-message" id="beneficiaryMessage"></p>
+      <footer><button type="button" class="ghost" data-close>Cancelar</button><button class="primary">Guardar</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="aidDialog">
+    <form method="dialog" id="aidForm" class="modal-form">
+      <header><h2 id="aidModalTitle">Registrar ayuda</h2><button type="button" class="icon-btn" data-close>X</button></header>
+      <input type="hidden" id="aidId">
+      <div class="form-grid">
+        <label>Beneficiario<select id="aidBeneficiary" required></select></label>
+        <label>Tipo de ayuda<select id="aidType" required></select></label>
+        <label id="aidTypeOtherWrap" class="hidden">Detalle tipo<input id="aidTypeOther"></label>
+        <label>Motivo<select id="aidReason" required></select></label>
+        <label id="aidReasonOtherWrap" class="hidden">Detalle motivo<input id="aidReasonOther"></label>
+        <label>Cantidad<input id="aidQuantity" type="number" min="1" required></label>
+        <label>Fecha de ayuda<input id="aidDate" type="date" required></label>
+      </div>
+      <label>Observaciones<textarea id="aidNotes" rows="3"></textarea></label>
+      <p class="form-message" id="aidMessage"></p>
+      <footer><button type="button" class="ghost" data-close>Cancelar</button><button class="primary">Guardar</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="catalogDialog">
+    <form method="dialog" id="catalogForm" class="modal-form compact">
+      <header><h2 id="catalogModalTitle">Categoria</h2><button type="button" class="icon-btn" data-close>X</button></header>
+      <input type="hidden" id="catalogKind">
+      <input type="hidden" id="catalogId">
+      <label>Nombre<input id="catalogName" required></label>
+      <p class="form-message" id="catalogMessage"></p>
+      <footer><button type="button" class="ghost" data-close>Cancelar</button><button class="primary">Guardar</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="userDialog">
+    <form method="dialog" id="userForm" class="modal-form compact">
+      <header><h2 id="userModalTitle">Nuevo usuario</h2><button type="button" class="icon-btn" data-close>X</button></header>
+      <input type="hidden" id="userId">
+      <label>Usuario<input id="username" required></label>
+      <label>Nombre completo<input id="userFullName" required></label>
+      <label>Telefono<input id="userPhone" required></label>
+      <label>Rol<select id="userRole"><option>Administrador</option><option>Operador</option><option>Consulta</option></select></label>
+      <label>Barrio<select id="userBarrio"></select></label>
+      <label>Estado<select id="userActive"><option value="true">Activo</option><option value="false">Inactivo</option></select></label>
+      <p class="form-message" id="userMessage"></p>
+      <footer><button type="button" class="ghost" data-close>Cancelar</button><button class="primary">Guardar</button></footer>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
