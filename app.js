@@ -8,6 +8,7 @@ let currentReportMeta = { title: "reporte", from: "", to: "" };
 let remoteSyncEnabled = Boolean(API_BASE);
 let syncTimer = null;
 const chartColors = ["#265dd8", "#0f766e", "#d97706", "#b42318", "#7c3aed", "#0891b2", "#be123c", "#4d7c0f"];
+const pieChartPalette = ["#6d5efc", "#16a085", "#f59e0b", "#ec4899", "#3b82f6", "#8b5cf6", "#f97316", "#34d399"];
 const districtColors = ["#4f8ef7", "#36b37e", "#f59e0b", "#ef6f6c", "#7c6ae2"];
 const districtPolygons = {
   10: "128,48 220,42 270,88 262,154 172,176 104,142 96,88",
@@ -404,14 +405,14 @@ function renderPie(pieSelector, legendSelector, grouped, catalog) {
   const segments = entries.map(([, value], index) => {
     const start = cursor;
     cursor += (value / total) * 100;
-    return `${chartColors[index % chartColors.length]} ${start}% ${cursor}%`;
+    return `${pieChartPalette[index % pieChartPalette.length]} ${start}% ${cursor}%`;
   });
   pie.style.background = `conic-gradient(${segments.join(", ")})`;
   pie.innerHTML = `<span>${total}</span>`;
   legend.innerHTML = entries.map(([id, value], index) => {
     const label = catalog.find((item) => item.id === Number(id))?.name || "Sin dato";
     const pct = Math.round((value / total) * 100);
-    return `<div class="legend-row"><span class="legend-color" style="background:${chartColors[index % chartColors.length]}"></span><strong>${label}</strong><span>${value} unidades</span><em>${pct}%</em></div>`;
+    return `<div class="legend-row"><span class="legend-color" style="background:${pieChartPalette[index % pieChartPalette.length]}"></span><strong>${label}</strong><span>${value} unidades</span><em>${pct}%</em></div>`;
   }).join("");
 }
 
